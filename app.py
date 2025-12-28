@@ -55,14 +55,14 @@ with st.form("account_form"):
 
         if is_admin:
             income = st.number_input("입금액", min_value=0, step=1000)
-            income_desc = st.text_input("입금 내역")
+            income_desc = st.text_input("입금내역")
         else:
             income = 0
             income_desc = ""
 
     with col2:
         expense = st.number_input("출금액", min_value=0, step=1000)
-        expense_desc = st.text_input("출금 내역")
+        expense_desc = st.text_input("출금내역")
 
     submitted = st.form_submit_button("저장")
 
