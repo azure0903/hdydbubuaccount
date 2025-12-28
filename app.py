@@ -50,10 +50,16 @@ with st.form("account_form"):
 
     submitted = st.form_submit_button("저장")
     if submitted:
-        desc_value = income_desc if income_desc else expense_desc
-        append_row(sheet, account_date, income, expense, desc_value, st.session_state.user, WORKSHEET_NAME)
-        st.success("회계 내역이 저장되었습니다.")
-        st.experimental_rerun()
+    append_row(
+        sheet,
+        account_date,
+        income,
+        income_desc,
+        expense,
+        expense_desc,
+        st.session_state.user
+    )
+    st.success("회계 내역이 스프레드시트에 저장되었습니다.")
 
 st.divider()
 
