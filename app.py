@@ -21,13 +21,13 @@ sheet = open_sheet(SHEET_ID)
 df = get_dataframe(sheet)
 
 # ===== 총계 표시 =====
-total_income = df['입금'].sum()
-total_expense = df['출금'].sum()
+total_income = df['입금액'].sum()
+total_expense = df['출금액'].sum()
 balance = total_income - total_expense
 
 col1, col2, col3 = st.columns(3)
-col1.metric("총 입금", f"₩{total_income:,}")
-col2.metric("총 출금", f"₩{total_expense:,}")
+col1.metric("총 입금액", f"₩{total_income:,}")
+col2.metric("총 출금액", f"₩{total_expense:,}")
 col3.metric("현재 잔액", f"₩{balance:,}")
 st.divider()
 
