@@ -1,37 +1,93 @@
 import streamlit as st
-import hashlib
+import gspread
+from google.oauth2.service_account import Credentials
+import pandas as pd
 
-def login():
-    if "user" not in st.session_state:
-        st.session_state.user = None
+# ======================
+# Google Sheets Client
+# ======================
+@st.cache_resource
+def get_gspread_client():
+    creds = Credentials.from_service_account_info(
+        st.secrets["google_service_account"],
+        scopes=[
+            "https://www.googleapis.com/auth/spreadsheets",
+            "https://www.googleapis.com/auth/drive"
+        ]
+    )
+    return gspread.authorize(creds)
 
-    st.title("💒 하늘꿈연동교회 부부청년부 회계관리 로그인")
 
-    username = st.text_input("사용자 이름")
-    password = st.text_input("비밀번호", type="password")
-    login_btn = st.button("로그인")
+# ======================
+# Spreadsheet Open
+# ======================
+def open_sheet_by_id(sheet_id):
+    gc = get_gspread_client()
+    return gc.open_by_key(sheet_id)
 
-    if login_btn:
-        users = st.secrets["users"]
 
-        if username not in users:
-            st.error("존재하지 않는 사용자입니다.")
-            return False
+def get_worksheet(sheet_id, index=0):
+    sh = open_sheet_by_id(sheet_id)
+    return sh.get_worksheet(index)
 
-        entered_hash = hashlib.sha256(password.encode("utf-8")).hexdigest()
-        stored_hash = users[username]["password_hash"]
 
-        if entered_hash != stored_hash:
-            st.error("비밀번호가 올바르지 않습니다.")
-            return False
+# ======================
+# Read
+# ======================
+def load_account_df(sheet_id):
+    ws = get_worksheet(sheet_id)
+    records = ws.get_all_records()
 
-        # 로그인 성공
-        st.session_state.user = username
-        st.success(f"환영합니다, {username}님!")
-        st.experimental_rerun()  # 버튼 클릭 이벤트 내에서만 rerun
-        return True
+    if not records:
+        return pd.DataFrame(columns=[
+            "기록일자", "회계일자",
+            "입금", "입금내역",
+            "출금", "출금내역",
+            "작성자"
+        ])
 
-    if st.session_state.user:
-        return True
+    return pd.DataFrame(records)
 
-    return False
+
+# ======================
+# Append
+# ======================
+def append_account_row(
+    sheet_id,
+    accounting_date,
+    income,
+    income_desc,
+    expense,
+    expense_desc,
+    writer
+):
+    ws = get_worksheet(sheet_id)
+
+    ws.append_row([
+        pd.Timestamp.now().strftime("%Y-%m-%d %H:%M:%S"),  # 기록일자
+        accounting_date.strftime("%Y-%m-%d"),             # 회계일자
+        income,
+        income_desc,
+        expense,
+        expense_desc,
+        writer
+    ])
+
+
+# ======================
+# Update
+# ======================
+def update_account_row(sheet_id, row_index, row_data: list):
+    """
+    row_index: DataFrame 기준 index (0부터)
+    """
+    ws = get_worksheet(sheet_id)
+    ws.update(f"A{row_index + 2}:G{row_index + 2}", [row_data])
+
+
+# ======================
+# Delete
+# ======================
+def delete_account_row(sheet_id, row_index):
+    ws = get_worksheet(sheet_id)
+    ws.delete_rows(row_index + 2)
