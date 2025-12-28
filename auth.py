@@ -14,7 +14,7 @@ def login():
     password = st.text_input("비밀번호", type="password")
 
     if st.button("로그인"):
-        users = st.secrets["users"]
+        users = st.secrets["users"]  # ✅ 소문자
 
         if user_id in users:
             stored_hash = users[user_id]["password_hash"]
