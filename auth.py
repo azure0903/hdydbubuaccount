@@ -1,26 +1,39 @@
 import streamlit as st
-import hashlib
+import gspread
+from google.oauth2.service_account import Credentials
+import pandas as pd
 
-def login():
-    if 'user' not in st.session_state:
-        st.session_state.user = None
+WORKSHEET_NAME = "Sheet1"
 
-    if st.session_state.user:
-        return True
+@st.cache_resource
+def get_gspread_client():
+    creds = Credentials.from_service_account_info(
+        st.secrets["google_service_account"],
+        scopes=["https://www.googleapis.com/auth/spreadsheets"]
+    )
+    return gspread.authorize(creds)
 
-    st.subheader("로그인")
-    username = st.text_input("사용자 이름")
-    password = st.text_input("비밀번호", type="password")
+def open_sheet(sheet_id):
+    gc = get_gspread_client()
+    return gc.open_by_key(sheet_id)
 
-    if st.button("로그인"):
-        users = st.secrets["users"]
-        if username in users:
-            hashed_input = hashlib.sha256(password.encode()).hexdigest()
-            if hashed_input == users[username]["password_hash"]:
-                st.session_state.user = username
-                st.experimental_rerun()
-            else:
-                st.error("비밀번호가 올바르지 않습니다.")
-        else:
-            st.error("사용자를 찾을 수 없습니다.")
-    return False
+def get_dataframe(sheet, worksheet_name=WORKSHEET_NAME):
+    ws = sheet.worksheet(worksheet_name)
+    data = ws.get_all_records()
+    return pd.DataFrame(data)
+
+def append_row(sheet, account_date, income, expense, desc, writer, worksheet_name=WORKSHEET_NAME):
+    ws = sheet.worksheet(worksheet_name)
+    ws.append_row([str(account_date), income, expense, desc, writer])
+
+def update_row(sheet, row_idx, account_date, income, expense, desc, writer, worksheet_name=WORKSHEET_NAME):
+    ws = sheet.worksheet(worksheet_name)
+    ws.update(f"A{row_idx}", str(account_date))
+    ws.update(f"B{row_idx}", income)
+    ws.update(f"C{row_idx}", expense)
+    ws.update(f"D{row_idx}", desc)
+    ws.update(f"E{row_idx}", writer)
+
+def delete_row(sheet, row_idx, worksheet_name=WORKSHEET_NAME):
+    ws = sheet.worksheet(worksheet_name)
+    ws.delete_rows(row_idx)
