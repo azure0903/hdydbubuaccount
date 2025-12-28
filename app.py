@@ -9,7 +9,7 @@ from google.oauth2.service_account import Credentials
 # 기본 설정
 # ======================
 st.set_page_config(
-    page_title="모임 회계",
+    page_title="하늘꿈연동교회 부부청년부 회계관리",
     layout="wide"
 )
 
@@ -155,7 +155,7 @@ def dashboard(df):
 st.sidebar.markdown(f"👤 로그인: **{USER_ID}**")
 logout()
 
-st.title("💰 모임 회계 관리")
+st.title("💰 하늘꿈연동교회 부부청년부 회계관리")
 
 accounting_form()
 dashboard(df)
