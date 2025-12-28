@@ -105,3 +105,24 @@ def calculate_summary(df: pd.DataFrame):
     balance = total_income - total_expense
 
     return total_income, total_expense, balance
+
+# =========================
+# 행 수정
+# =========================
+def update_account_row(ws, row_number: int, values: list):
+    """
+    row_number: Google Sheet 실제 행 번호 (1부터 시작)
+    values: 헤더 제외한 데이터 리스트
+    """
+    ws.update(
+        f"A{row_number}:G{row_number}",
+        [values],
+        value_input_option="USER_ENTERED"
+    )
+
+
+# =========================
+# 행 삭제
+# =========================
+def delete_account_row(ws, row_number: int):
+    ws.delete_rows(row_number)
