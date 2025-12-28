@@ -1,11 +1,11 @@
 import streamlit as st
 import gspread
-from google.oauth2.service_account import Credentials
 import pandas as pd
-from datetime import datetime
+from google.oauth2.service_account import Credentials
 
-WORKSHEET_NAME = "Sheet1"
-
+# ======================
+# gspread 클라이언트 생성 (캐시)
+# ======================
 @st.cache_resource
 def get_gspread_client():
     creds = Credentials.from_service_account_info(
@@ -14,37 +14,51 @@ def get_gspread_client():
     )
     return gspread.authorize(creds)
 
+# ======================
+# 스프레드시트 열기
+# ======================
 def open_sheet(sheet_id):
     gc = get_gspread_client()
     return gc.open_by_key(sheet_id)
 
-def get_dataframe(sheet, worksheet_name=WORKSHEET_NAME):
+# ======================
+# 시트를 DataFrame으로 변환
+# ======================
+def get_dataframe(sheet, worksheet_name):
     ws = sheet.worksheet(worksheet_name)
     data = ws.get_all_records()
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+    return df
 
-def append_row(sheet, account_date, income, income_desc, expense, expense_desc, writer):
-    ws = sheet.get_worksheet(0)
-    record_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 기록일자
-    row = [
+# ======================
+# 행 추가
+# ======================
+def append_row(sheet, record_date, account_date, income, income_desc, expense, expense_desc, author):
+    ws = sheet.worksheet("Sheet1")
+    ws.append_row([
         record_date,
-        account_date.strftime("%Y-%m-%d"),
+        account_date,
         income,
         income_desc,
         expense,
         expense_desc,
-        writer
-    ]
-    ws.append_row(row)
+        author
+    ])
 
-def update_row(sheet, row_idx, account_date, income, expense, desc, writer, worksheet_name=WORKSHEET_NAME):
-    ws = sheet.worksheet(worksheet_name)
-    ws.update(f"A{row_idx}", str(account_date))
-    ws.update(f"B{row_idx}", income)
-    ws.update(f"C{row_idx}", expense)
-    ws.update(f"D{row_idx}", desc)
-    ws.update(f"E{row_idx}", writer)
+# ======================
+# 행 수정
+# row_number: 시트 기준 행 번호 (헤더 포함)
+# ======================
+def update_row(sheet, row_number, new_income, new_income_desc, new_expense, new_expense_desc):
+    ws = sheet.worksheet("Sheet1")
+    ws.update(f"C{row_number}", new_income)        # 입금
+    ws.update(f"D{row_number}", new_income_desc)   # 입금 내역
+    ws.update(f"E{row_number}", new_expense)       # 출금
+    ws.update(f"F{row_number}", new_expense_desc)  # 출금 내역
 
-def delete_row(sheet, row_idx, worksheet_name=WORKSHEET_NAME):
-    ws = sheet.worksheet(worksheet_name)
-    ws.delete_rows(row_idx)
+# ======================
+# 행 삭제
+# ======================
+def delete_row(sheet, row_number):
+    ws = sheet.worksheet("Sheet1")
+    ws.delete_rows(row_number)
