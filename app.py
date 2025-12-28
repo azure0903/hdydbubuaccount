@@ -71,42 +71,75 @@ c3.metric("현재 잔액", f"₩{balance:,}")
 
 st.divider()
 
-# =========================
-# ➕ 회계 입력 폼
-# =========================
-st.subheader("➕ 회계 내역 입력")
+st.subheader("📋 회계 내역")
 
-with st.form("account_form", clear_on_submit=True):
-    col1, col2 = st.columns(2)
+if df.empty:
+    st.info("아직 등록된 회계 내역이 없습니다.")
+else:
+    # Google Sheet 실제 행 번호 계산
+    df_display = df.copy()
+    df_display["_row"] = df_display.index + 2  # 헤더 때문에 +2
 
-    with col1:
-        account_date = st.date_input("회계일자")
-        income = st.number_input("입금액", min_value=0, step=1000)
-        income_desc = st.text_input("입금 내역")
+    for _, row in df_display.iterrows():
+        with st.expander(f"📅 {row['회계일자']} | {row['입금내역'] or row['출금내역']}"):
+            col1, col2 = st.columns([3, 1])
 
-    with col2:
-        expense = st.number_input("출금액", min_value=0, step=1000)
-        expense_desc = st.text_input("출금 내역")
+            with col1:
+                with st.form(f"edit_form_{row['_row']}"):
+                    account_date = st.date_input(
+                        "회계일자",
+                        pd.to_datetime(row["회계일자"]),
+                        key=f"date_{row['_row']}"
+                    )
+                    income = st.number_input(
+                        "입금",
+                        value=int(row["입금"]),
+                        min_value=0,
+                        step=1000,
+                        key=f"in_{row['_row']}"
+                    )
+                    income_desc = st.text_input(
+                        "입금 내역",
+                        value=row["입금내역"],
+                        key=f"in_desc_{row['_row']}"
+                    )
+                    expense = st.number_input(
+                        "출금",
+                        value=int(row["출금"]),
+                        min_value=0,
+                        step=1000,
+                        key=f"out_{row['_row']}"
+                    )
+                    expense_desc = st.text_input(
+                        "출금 내역",
+                        value=row["출금내역"],
+                        key=f"out_desc_{row['_row']}"
+                    )
 
-    submitted = st.form_submit_button("저장")
+                    saved = st.form_submit_button("💾 수정 저장")
 
-    if submitted:
-        if income == 0 and expense == 0:
-            st.warning("입금 또는 출금 금액을 입력해주세요.")
-        else:
-            append_account_row(
-                ws=ws,
-                account_date=account_date,
-                income=income,
-                income_desc=income_desc,
-                expense=expense,
-                expense_desc=expense_desc,
-                writer=st.session_state.username
-            )
-            st.success("회계 내역이 저장되었습니다.")
-            st.rerun()
+                    if saved:
+                        update_account_row(
+                            ws,
+                            row["_row"],
+                            [
+                                row["기록일자"],
+                                account_date.strftime("%Y-%m-%d"),
+                                income if income > 0 else "",
+                                income_desc,
+                                expense if expense > 0 else "",
+                                expense_desc,
+                                row["작성자"],
+                            ],
+                        )
+                        st.success("수정되었습니다.")
+                        st.rerun()
 
-st.divider()
+            with col2:
+                if st.button("🗑 삭제", key=f"del_{row['_row']}"):
+                    delete_account_row(ws, row["_row"])
+                    st.warning("삭제되었습니다.")
+                    st.rerun()
 
 # =========================
 # 📋 회계 현황 테이블
