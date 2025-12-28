@@ -15,16 +15,16 @@ st.set_page_config(
 # =====================
 # 로그인 처리
 # =====================
-if "logged_in" not in st.session_state:
+if 'logged_in' not in st.session_state:
     st.session_state.logged_in = False
 
 if not st.session_state.logged_in:
-    if login():
+    if login():  # login()이 True 반환 시
         st.session_state.logged_in = True
-        st.session_state.user = st.session_state.user
-        st.experimental_rerun()
-    else:
-        st.stop()
+        st.success(f"{st.session_state.user}님, 로그인 되었습니다!")
+        # rerun 제거하고 다음 코드는 그대로 진행
+else:
+    st.title("하늘꿈연동교회 부부청년부 회계관리")
 
 # =====================
 # 로그인 이후 화면
