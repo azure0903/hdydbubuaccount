@@ -1,12 +1,11 @@
-# sheets.py
 import streamlit as st
 import gspread
-import pandas as pd
 from google.oauth2.service_account import Credentials
+import pandas as pd
 
-# =====================
-# gspread 클라이언트 캐시
-# =====================
+# =========================
+# 구글 시트 클라이언트
+# =========================
 @st.cache_resource
 def get_gspread_client():
     creds = Credentials.from_service_account_info(
@@ -15,49 +14,40 @@ def get_gspread_client():
     )
     return gspread.authorize(creds)
 
-
-# =====================
-# 시트 열기
-# =====================
 def open_sheet(sheet_id):
     gc = get_gspread_client()
     return gc.open_by_key(sheet_id)
 
+# =========================
+# 데이터 가져오기
+# =========================
+def get_dataframe(sheet, worksheet_name="Sheet1"):
+    ws = sheet.worksheet(worksheet_name)
+    data = ws.get_all_records()
+    df = pd.DataFrame(data)
+    return df
 
-# =====================
-# DataFrame 가져오기
-# =====================
-def get_dataframe(sheet, worksheet_name):
-    try:
-        ws = sheet.worksheet(worksheet_name)
-        data = ws.get_all_records()
-        df = pd.DataFrame(data)
-        return df
-    except gspread.exceptions.WorksheetNotFound:
-        st.warning(f"워크시트 '{worksheet_name}'을(를) 찾을 수 없습니다.")
-        return pd.DataFrame()
-
-
-# =====================
+# =========================
 # 행 추가
-# =====================
-def append_row(sheet, worksheet_name, row_values):
+# =========================
+def append_row(sheet, account_date, income, expense, desc, writer, worksheet_name="Sheet1"):
     ws = sheet.worksheet(worksheet_name)
-    ws.append_row(row_values, value_input_option="USER_ENTERED")
+    ws.append_row([str(account_date), income, expense, desc, writer])
 
-
-# =====================
+# =========================
 # 행 수정
-# =====================
-def update_row(sheet, worksheet_name, row_index, row_values):
+# row_index는 시트 기준 (1부터 시작, 헤더 포함)
+# =========================
+def update_row(sheet, row_index, income, expense, desc, worksheet_name="Sheet1"):
     ws = sheet.worksheet(worksheet_name)
-    for col_idx, value in enumerate(row_values, start=1):
-        ws.update_cell(row_index, col_idx, value)
+    ws.update(f'B{row_index}', income)
+    ws.update(f'C{row_index}', expense)
+    ws.update(f'D{row_index}', desc)
 
-
-# =====================
+# =========================
 # 행 삭제
-# =====================
-def delete_row(sheet, worksheet_name, row_index):
+# row_index는 시트 기준 (1부터 시작, 헤더 포함)
+# =========================
+def delete_row(sheet, row_index, worksheet_name="Sheet1"):
     ws = sheet.worksheet(worksheet_name)
     ws.delete_rows(row_index)
