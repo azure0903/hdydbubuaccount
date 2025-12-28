@@ -94,58 +94,38 @@ with st.form("account_form"):
         st.success("회계 내역이 저장되었습니다.")
         st.experimental_rerun()
 
-# =====================
-# 회계 내역 수정 / 삭제
-# =====================
+# 삭제 권한이 있는 사용자 리스트
+delete_allowed_users = ["도기웅", "김현주"]
+
 st.subheader("📝 회계 내역 수정 / 삭제")
 
-# display 컬럼 생성
-df['display'] = df.apply(
-    lambda x: f"날짜:{x.get('회계일자','')} | 입금:{x.get('입금','')} | 출금:{x.get('출금','')} | 작성자:{x.get('작성자','')}",
-    axis=1
-)
-
-if not df.empty:
-    selected_idx = st.selectbox(
-        "대상 선택",
-        df.index,
-        format_func=lambda x: df.loc[x, 'display']
+for idx, row in df.iterrows():
+    st.write(
+        f"날짜: {row['회계일자']} | 입금: {row['입금']} | 출금: {row['출금']} | 작성자: {row['작성자']}"
     )
 
-    selected_row = df.loc[selected_idx]
+    with st.expander("수정 / 삭제"):
+        new_income = st.number_input(
+            "입금액", value=int(row['입금']), key=f"income_{idx}"
+        )
+        new_expense = st.number_input(
+            "출금액", value=int(row['출금']), key=f"expense_{idx}"
+        )
+        new_desc = st.text_input(
+            "내역", value=row['내역'], key=f"desc_{idx}"
+        )
 
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        new_income = st.number_input("입금액", value=int(selected_row['입금']))
-        new_income_desc = st.text_input("입금 내역", value=selected_row['입금내역'])
-    with col2:
-        new_expense = st.number_input("출금액", value=int(selected_row['출금']))
-        new_expense_desc = st.text_input("출금 내역", value=selected_row['출금내역'])
-    with col3:
-        st.text(f"작성자: {selected_row['작성자']}")
+        # 수정 버튼
+        if st.button("수정", key=f"update_{idx}"):
+            update_row(sheet, idx + 2, new_income, new_expense, new_desc)  # 예: 구글시트 행 인덱스
+            st.success("수정 완료!")
 
-    # 수정 버튼
-    if st.button("수정"):
-        updated_row = [
-            selected_row['기록일자'],
-            selected_row['회계일자'],
-            new_income,
-            new_income_desc,
-            new_expense,
-            new_expense_desc,
-            selected_row['작성자']
-        ]
-        update_row(sheet, WORKSHEET_NAME, selected_idx+2, updated_row)  # +2 : 시트 헤더 포함
-        st.success("회계 내역이 수정되었습니다.")
-        st.experimental_rerun()
-
-    # 삭제 버튼 (권한 제한)
-    if st.session_state.user in ["도기웅", "김현주"]:
-        if st.button("삭제"):
-            delete_row(sheet, WORKSHEET_NAME, selected_idx+2)
-            st.success("회계 내역이 삭제되었습니다.")
-            st.experimental_rerun()
-    else:
-        st.info("삭제가 필요할 경우 총무에게 요청해주세요.")
+        # 삭제 권한 체크
+        if st.session_state.user in delete_allowed_users:
+            if st.button("삭제", key=f"delete_{idx}"):
+                delete_row(sheet, idx + 2)
+                st.success("삭제 완료!")
+        else:
+            st.info("삭제가 필요할 경우 총무에게 요청해주세요.")
 else:
     st.info("저장된 회계 내역이 없습니다.")
