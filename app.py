@@ -26,7 +26,7 @@ st.caption(f"로그인 사용자: {st.session_state.user}")
 # 구글 시트 연결
 # ======================
 SHEET_NAME = "하늘꿈연동교회 부부청년부 2026"
-ws = open_sheet(SHEET_NAME).worksheet("Sheet1")
+ws = open_sheet(SHEET_NAME).get_worksheet(0)
 
 # ======================
 # 데이터 로드
