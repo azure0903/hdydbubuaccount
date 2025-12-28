@@ -1,7 +1,9 @@
 import streamlit as st
 from werkzeug.security import check_password_hash
 
+
 def login():
+    # 세션 초기화
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
 
@@ -14,19 +16,24 @@ def login():
     password = st.text_input("비밀번호", type="password")
 
     if st.button("로그인"):
-        users = st.secrets["users"]  # ✅ 소문자
+        try:
+            users = st.secrets["users"]
+        except KeyError:
+            st.error("사용자 정보(secrets)가 설정되지 않았습니다.")
+            return False
 
-        if user_id in users:
-            stored_hash = users[user_id]["password_hash"]
+        if user_id not in users:
+            st.error("존재하지 않는 아이디입니다.")
+            return False
 
-            if check_password_hash(stored_hash, password):
-                st.session_state.logged_in = True
-                st.session_state.user_id = user_id
-                st.success(f"{user_id}님 환영합니다")
-                st.rerun()
-            else:
-                st.error("비밀번호가 올바르지 않습니다")
+        stored_hash = users[user_id]["password_hash"]
+
+        if check_password_hash(stored_hash, password):
+            st.session_state.logged_in = True
+            st.session_state.user_id = user_id
+            st.success(f"{user_id}님 환영합니다")
+            st.rerun()
         else:
-            st.error("존재하지 않는 아이디입니다")
+            st.error("비밀번호가 올바르지 않습니다.")
 
     return False
