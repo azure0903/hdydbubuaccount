@@ -110,7 +110,7 @@ if not df.empty:
                 f"{df.loc[x, '회계일자']} | "
                 f"입금 {df.loc[x, '입금액']} | "
                 f"출금 {df.loc[x, '출금액']} | "
-                f"{df.loc[x, '출금 내역']}"
+                f"{df.loc[x, '출금내역']}"
             )
         )
 
