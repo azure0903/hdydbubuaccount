@@ -2,6 +2,7 @@ import streamlit as st
 import gspread
 from google.oauth2.service_account import Credentials
 import pandas as pd
+from datetime import datetime
 
 WORKSHEET_NAME = "Sheet1"
 
@@ -22,9 +23,19 @@ def get_dataframe(sheet, worksheet_name=WORKSHEET_NAME):
     data = ws.get_all_records()
     return pd.DataFrame(data)
 
-def append_row(sheet, account_date, income, expense, desc, writer, worksheet_name=WORKSHEET_NAME):
-    ws = sheet.worksheet(worksheet_name)
-    ws.append_row([str(account_date), income, expense, desc, writer])
+def append_row(sheet, account_date, income, income_desc, expense, expense_desc, writer):
+    ws = sheet.get_worksheet(0)
+    record_date = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  # 기록일자
+    row = [
+        record_date,
+        account_date.strftime("%Y-%m-%d"),
+        income,
+        income_desc,
+        expense,
+        expense_desc,
+        writer
+    ]
+    ws.append_row(row)
 
 def update_row(sheet, row_idx, account_date, income, expense, desc, writer, worksheet_name=WORKSHEET_NAME):
     ws = sheet.worksheet(worksheet_name)
