@@ -6,7 +6,17 @@ st.set_page_config(
     layout="wide"
 )
 
-if not login():
+# ----------------------
+# 로그인 상태 초기화
+# ----------------------
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+# ----------------------
+# 로그인 처리
+# ----------------------
+if not st.session_state.logged_in:
+    login()
     st.stop()
 
 # ======================
@@ -14,7 +24,7 @@ if not login():
 # ======================
 
 st.title("💒 하늘꿈연동교회 부부청년부 회계관리")
-st.caption(f"로그인 사용자: {st.session_state.user}")
+st.caption(f"로그인 사용자: {st.session_state.username}")
 
 st.divider()
 
