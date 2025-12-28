@@ -126,3 +126,9 @@ def update_account_row(ws, row_number: int, values: list):
 # =========================
 def delete_account_row(ws, row_number: int):
     ws.delete_rows(row_number)
+
+def append_account_row(ws, values: list):
+    """
+    values: [기록일자, 회계일자, 입금, 입금내역, 출금, 출금내역, 작성자]
+    """
+    ws.append_row(values, value_input_option="USER_ENTERED")
