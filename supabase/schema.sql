@@ -45,3 +45,5 @@ create index if not exists transactions_member_id_idx on public.transactions(mem
 alter table public.categories enable row level security;
 alter table public.members enable row level security;
 alter table public.transactions enable row level security;
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.categories, public.members, public.transactions to service_role;
