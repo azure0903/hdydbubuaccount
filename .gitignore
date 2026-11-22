@@ -1,0 +1,9 @@
+.env
+.env.*
+!.env.example
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+.vercel/
+__pycache__/
