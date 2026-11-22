@@ -1,14 +1,42 @@
 import { db, isSupabaseConfigured } from "./supabase";
 import { loadTransactions } from "./sheets";
-import type { Category, Member, Transaction } from "./types";
+import type { Category, Kind, Member, Transaction } from "./types";
 import { isSheetConfigured, type GroupId } from "./group";
 import { HttpError } from "./auth";
 
 export async function ledgerData(group: GroupId) {
   const sheetConfigured = isSheetConfigured(group);
   const transactions = sheetConfigured ? await loadTransactions(group) : [];
-  if (!isSupabaseConfigured()) return { transactions, categories: [] as Category[], members: [] as Member[], supabaseConfigured: false, sheetConfigured };
+  if (!isSupabaseConfigured()) return { transactions, categories: [] as Category[], members: [] as Member[], supabaseConfigured: false, sheetConfigured, storageReady: sheetConfigured };
   const supabase = db();
+  if (group === "dreamharam") {
+    const loadDreamTransactions = async (): Promise<Transaction[]> => {
+      const all: Transaction[] = [];
+      const pageSize = 500;
+      for (let start = 0; ; start += pageSize) {
+        const { data, error } = await supabase.from("transactions")
+          .select("id,sheet_row,recorded_at,accounting_date,kind,amount,description,writer,category_id,member_id")
+          .eq("group_id", group).order("accounting_date", { ascending: false })
+          .range(start, start + pageSize - 1);
+        if (error) throw error;
+        all.push(...(data ?? []).map(row => ({
+          id: row.id, sheetRow: row.sheet_row ?? 0, recordedAt: row.recorded_at,
+          date: row.accounting_date, kind: row.kind as Kind, amount: Number(row.amount),
+          description: row.description, writer: row.writer,
+          categoryId: row.category_id, memberId: row.member_id
+        })));
+        if ((data?.length ?? 0) < pageSize) break;
+      }
+      return all;
+    };
+    const [transactionResult, categoryResult, memberResult] = await Promise.all([
+      loadDreamTransactions(),
+      supabase.from("categories").select("id,name,kind,color").eq("group_id", group).order("name"),
+      supabase.from("members").select("id,name,note,active").eq("group_id", group).order("name")
+    ]);
+    for (const result of [categoryResult, memberResult]) if (result.error) throw result.error;
+    return { transactions: transactionResult, categories: (categoryResult.data ?? []) as Category[], members: (memberResult.data ?? []) as Member[], supabaseConfigured: true, sheetConfigured: false, storageReady: true };
+  }
   const [mirrorResult, categoryResult, memberResult] = await Promise.all([
     supabase.from("transactions").select("id,category_id,member_id").eq("group_id", group),
     supabase.from("categories").select("id,name,kind,color").eq("group_id", group).order("name"),
@@ -32,7 +60,7 @@ export async function ledgerData(group: GroupId) {
     const { error } = await supabase.from("transactions").delete().eq("group_id", group).in("id", stale);
     if (error) throw error;
   }
-  return { transactions: merged, categories: (categoryResult.data ?? []) as Category[], members: (memberResult.data ?? []) as Member[], supabaseConfigured: true, sheetConfigured };
+  return { transactions: merged, categories: (categoryResult.data ?? []) as Category[], members: (memberResult.data ?? []) as Member[], supabaseConfigured: true, sheetConfigured, storageReady: sheetConfigured };
 }
 export async function validateMetadata(group: GroupId, categoryId: string | null, memberId: string | null) {
   if (!categoryId && !memberId) return;

@@ -19,7 +19,7 @@ create table if not exists public.members (
 create table if not exists public.transactions (
   id uuid primary key,
   group_id text not null default 'bubu' check (group_id in ('bubu', 'dreamharam')),
-  sheet_row integer not null,
+  sheet_row integer,
   recorded_at text not null,
   accounting_date date not null,
   kind text not null check (kind in ('income', 'expense')),
@@ -34,6 +34,7 @@ create table if not exists public.transactions (
 alter table public.categories add column if not exists group_id text not null default 'bubu';
 alter table public.members add column if not exists group_id text not null default 'bubu';
 alter table public.transactions add column if not exists group_id text not null default 'bubu';
+alter table public.transactions alter column sheet_row drop not null;
 alter table public.categories drop constraint if exists categories_name_key;
 create unique index if not exists categories_group_name_key on public.categories(group_id, name);
 create index if not exists members_group_id_idx on public.members(group_id);

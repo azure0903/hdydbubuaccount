@@ -5,6 +5,7 @@ import { appendTransaction, deleteTransaction, loadTransactions, updateTransacti
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { optionalId, transactionInput } from "@/lib/validation";
 import type { GroupId } from "@/lib/group";
+import { createDreamTransaction, deleteDreamTransaction, updateDreamTransaction } from "@/lib/dreamharam";
 export const runtime = "nodejs";
 async function find(group: GroupId, id: unknown) {
   const validId = optionalId(id);
@@ -17,6 +18,10 @@ export async function POST(request: Request) {
   try {
     const group = requestGroup(request); const user = await requireUser(group); const input = transactionInput(await request.json());
     await validateMetadata(group, input.categoryId, input.memberId);
+    if (group === "dreamharam") {
+      const id = await createDreamTransaction(input, user);
+      return NextResponse.json({ id, warning: null }, { status: 201 });
+    }
     const id = await appendTransaction(group, input, user);
     let warning: string | null = null;
     if (isSupabaseConfigured()) {
@@ -28,7 +33,14 @@ export async function POST(request: Request) {
 }
 export async function PUT(request: Request) {
   try {
-    const group = requestGroup(request); await requireUser(group); const raw = await request.json(); const input = transactionInput(raw); const row = await find(group, raw.id);
+    const group = requestGroup(request); await requireUser(group); const raw = await request.json(); const input = transactionInput(raw);
+    if (group === "dreamharam") {
+      const id = optionalId(raw.id); if (!id) throw new HttpError(400, "거래 ID가 필요합니다.");
+      await validateMetadata(group, input.categoryId, input.memberId);
+      await updateDreamTransaction(id, input);
+      return NextResponse.json({ ok: true, warning: null });
+    }
+    const row = await find(group, raw.id);
     await validateMetadata(group, input.categoryId, input.memberId);
     await updateTransaction(group, row, input);
     let warning: string | null = null;
@@ -41,7 +53,13 @@ export async function PUT(request: Request) {
 }
 export async function DELETE(request: Request) {
   try {
-    const group = requestGroup(request); await requireUser(group); const raw = await request.json(); const row = await find(group, raw.id);
+    const group = requestGroup(request); await requireUser(group); const raw = await request.json();
+    if (group === "dreamharam") {
+      const id = optionalId(raw.id); if (!id) throw new HttpError(400, "거래 ID가 필요합니다.");
+      await deleteDreamTransaction(id);
+      return NextResponse.json({ ok: true, warning: null });
+    }
+    const row = await find(group, raw.id);
     await deleteTransaction(group, row);
     let warning: string | null = null;
     if (isSupabaseConfigured()) { try { await ledgerData(group); } catch { warning = "Sheet에서는 삭제되었지만 Supabase 동기화에 실패했습니다."; } }

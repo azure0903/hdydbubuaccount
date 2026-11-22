@@ -5,7 +5,7 @@ import type { Transaction } from "./types";
 import { GROUPS, type GroupId } from "./group";
 
 const HEADERS = ["기록일자", "회계일자", "입금", "입금내역", "출금", "출금내역", "작성자", "거래ID"];
-function sheetId(group: GroupId) { const id = process.env[GROUPS[group].sheetEnv]; if (!id) throw new HttpError(503, `${GROUPS[group].name} Google Sheet ID가 설정되지 않았습니다.`); return id; }
+function sheetId(group: GroupId) { if (group !== "bubu") throw new HttpError(400, "꿈하람 유치부는 Supabase에서 거래를 관리합니다."); const id = process.env.GOOGLE_SHEET_ID; if (!id) throw new HttpError(503, `${GROUPS[group].name} Google Sheet ID가 설정되지 않았습니다.`); return id; }
 async function client() {
   const encoded = process.env.GOOGLE_SERVICE_ACCOUNT_B64;
   if (!encoded) throw new Error("GOOGLE_SERVICE_ACCOUNT_B64이 필요합니다.");

@@ -1,8 +1,8 @@
 export type GroupId = "bubu" | "dreamharam";
 
-export const GROUPS: Record<GroupId, { name: string; sheetEnv: string }> = {
-  bubu: { name: "부부청년부", sheetEnv: "GOOGLE_SHEET_ID" },
-  dreamharam: { name: "꿈하람 유치부", sheetEnv: "DREAMHARAM_GOOGLE_SHEET_ID" }
+export const GROUPS: Record<GroupId, { name: string }> = {
+  bubu: { name: "부부청년부" },
+  dreamharam: { name: "꿈하람 유치부" }
 };
 
 export function parseGroup(value: unknown): GroupId | null {
@@ -10,5 +10,5 @@ export function parseGroup(value: unknown): GroupId | null {
 }
 
 export function isSheetConfigured(group: GroupId) {
-  return Boolean(process.env[GROUPS[group].sheetEnv]);
+  return group === "bubu" && Boolean(process.env.GOOGLE_SHEET_ID);
 }
