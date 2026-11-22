@@ -6,4 +6,5 @@ node_modules/
 out/
 *.tsbuildinfo
 .vercel/
+supabase/.temp/
 __pycache__/
